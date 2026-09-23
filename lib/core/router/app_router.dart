@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../features/new_alarm/presentation/new_alarm_flow.dart';
 import '../../shell/main_shell.dart';
-import '../widgets/coming_soon_screen.dart';
 import 'app_routes.dart';
 
 abstract final class AppRouter {
@@ -13,9 +13,8 @@ abstract final class AppRouter {
           settings: settings,
         );
       case AppRoutes.newAlarm:
-        // La Tarea 17 reemplaza este placeholder por NewAlarmFlow.
         return MaterialPageRoute<void>(
-          builder: (_) => const ComingSoonScreen(section: 'Nueva alarma'),
+          builder: (_) => const NewAlarmFlow(),
           settings: settings,
           fullscreenDialog: true,
         );
