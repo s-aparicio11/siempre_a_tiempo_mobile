@@ -18,6 +18,10 @@ void main() {
       find.byType(BottomNavigationBar),
     );
     expect(barra.currentIndex, 0);
+
+    // Inicio arranca la carga simulada de sus alarmas; se deja terminar para
+    // que la prueba no cierre con ese temporizador pendiente.
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('al tocar Mapa muestra el placeholder de esa sección', (tester) async {
