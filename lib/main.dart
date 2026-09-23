@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
-  runApp(const MaterialApp(
-    home: Scaffold(body: Center(child: Text('Siempre a Tiempo'))),
-  ));
+import 'app.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es');
+  runApp(const SiempreATiempoApp());
 }
