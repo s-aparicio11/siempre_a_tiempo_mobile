@@ -14,18 +14,53 @@ class LabeledField extends StatelessWidget {
     required this.child,
     required this.onClear,
     this.focused = false,
+    this.onContentTap,
   });
 
   final String label;
   final Widget child;
+
+  /// Toque sobre la etiqueta o el contenido. El campo de texto lo usa para
+  /// enfocarse aunque el toque caiga fuera de la línea donde se escribe.
+  final VoidCallback? onContentTap;
 
   /// `null` oculta el botón de limpiar, que es lo que ocurre con el campo vacío.
   final VoidCallback? onClear;
 
   final bool focused;
 
+  /// Etiqueta y contenido como un solo elemento accesible: el lector anuncia
+  /// el campo con su etiqueta y el área tocable abarca todo el recuadro, no
+  /// solo la línea de texto. Solo aplica cuando el contenido gestiona su
+  /// propio toque; si no, la etiqueta quedaría separada del `InkWell` de
+  /// `LabeledTapField` y ese toque se anunciaría sin descripción.
+  Widget _conToque(Widget contenido) => MergeSemantics(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onContentTap,
+          child: contenido,
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final Widget contenido = Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            label,
+            style: AppTypography.labelField.copyWith(
+              color: focused ? AppColors.secondary : AppColors.textSecondary,
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: focused ? AppColors.surface : AppColors.surfaceMuted,
@@ -39,22 +74,7 @@ class LabeledField extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    label,
-                    style: AppTypography.labelField.copyWith(
-                      color: focused ? AppColors.secondary : AppColors.textSecondary,
-                    ),
-                  ),
-                  child,
-                ],
-              ),
-            ),
+            child: onContentTap == null ? contenido : _conToque(contenido),
           ),
           if (onClear != null)
             IconButton(
@@ -125,6 +145,7 @@ class _LabeledTextFieldState extends State<LabeledTextField> {
     return LabeledField(
       label: widget.label,
       focused: _focusNode.hasFocus,
+      onContentTap: _focusNode.requestFocus,
       onClear: widget.value.isEmpty ? null : widget.onClear,
       child: TextField(
         controller: _controller,

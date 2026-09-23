@@ -69,7 +69,12 @@ class _HomeView extends StatelessWidget {
             child: CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.surfaceMuted,
-              child: Icon(LucideIcons.user, size: 18, color: AppColors.textSecondary),
+              child: Icon(
+                LucideIcons.user,
+                size: 18,
+                color: AppColors.textSecondary,
+                semanticLabel: 'Tu perfil',
+              ),
             ),
           ),
         ],

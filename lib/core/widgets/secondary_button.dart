@@ -26,7 +26,9 @@ class SecondaryButton extends StatelessWidget {
         disabledForegroundColor: AppColors.textSecondary,
         side: const BorderSide(color: AppColors.secondary, width: 1.5),
         minimumSize: const Size(0, AppSizes.buttonHeight),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        // Relleno contenido para que dos botones quepan lado a lado con la
+        // letra ampliada al 150 % en un celular de 360 dp.
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         shape: const StadiumBorder(),
         textStyle: AppTypography.labelButton,
       ),

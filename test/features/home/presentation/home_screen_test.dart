@@ -110,6 +110,17 @@ void main() {
     expect(find.byType(MainShell), findsNothing);
   });
 
+  testWidgets('el avatar del usuario tiene descripción para el lector',
+      (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final vm = HomeViewModel(MockAlarmRepository(delay: Duration.zero));
+    await _cargar(tester, vm);
+    await _pumpHome(tester, vm);
+
+    expect(find.bySemanticsLabel('Tu perfil'), findsOneWidget);
+    handle.dispose();
+  });
+
   testWidgets('el botón flotante usa la tipografía de botones', (tester) async {
     final vm = HomeViewModel(MockAlarmRepository(delay: Duration.zero));
     await _cargar(tester, vm);

@@ -100,6 +100,58 @@ void main() {
     });
   });
 
+  group('LabeledTextField: accesibilidad', () {
+    Widget campo() => Scaffold(
+          body: LabeledTextField(
+            label: 'Título de la reunión',
+            value: 'Reunión con cliente',
+            onChanged: (_) {},
+            onClear: () {},
+          ),
+        );
+
+    testWidgets('el campo de texto cumple el área tocable mínima',
+        (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpApp(tester, campo());
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('tocar la etiqueta enfoca el campo', (tester) async {
+      await pumpApp(tester, campo());
+
+      await tester.tap(find.text('Título de la reunión'));
+      await tester.pump();
+
+      final EditableText editable =
+          tester.widget<EditableText>(find.byType(EditableText));
+      expect(editable.focusNode.hasFocus, isTrue);
+    });
+
+    testWidgets('el lector de pantalla anuncia el campo con su etiqueta',
+        (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpApp(tester, campo());
+
+      expect(
+        tester.getSemantics(find.byType(TextField)),
+        matchesSemantics(
+          label: 'Título de la reunión',
+          value: 'Reunión con cliente',
+          isTextField: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isFocusable: true,
+          hasTapAction: true,
+          hasFocusAction: true,
+        ),
+      );
+      handle.dispose();
+    });
+  });
+
   group('LabeledTapField', () {
     testWidgets('muestra la pista cuando no hay valor', (tester) async {
       await pumpApp(
@@ -117,6 +169,25 @@ void main() {
 
       expect(find.text('Selecciona fecha y hora'), findsOneWidget);
       expect(find.byIcon(LucideIcons.x), findsNothing);
+    });
+
+    testWidgets('el área tocable se anuncia con su etiqueta', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpApp(
+        tester,
+        Scaffold(
+          body: LabeledTapField(
+            label: '¿Cuándo es?',
+            value: '20 de agosto de 2026, 3:00 PM',
+            hint: 'Selecciona fecha y hora',
+            onTap: () {},
+            onClear: () {},
+          ),
+        ),
+      );
+
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      handle.dispose();
     });
 
     testWidgets('muestra el valor y responde al toque', (tester) async {
