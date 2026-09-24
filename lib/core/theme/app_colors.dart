@@ -95,6 +95,19 @@ abstract final class AppColors {
   /// Segmentos pendientes del indicador de progreso del asistente.
   static const Color progressInactive = neutral300;
 
+  /// Fondo de una opción seleccionada de una lista.
+  static const Color selectedSurface = red100;
+
+  /// Fondo del recuadro que acompaña al ícono de una opción.
+  static const Color iconBadge = blue100;
+
+  /// Borde de un radio sin marcar.
+  ///
+  /// El mockup lo dibuja en `neutral500`, pero sobre blanco ese tono da
+  /// 2.0:1 y no alcanza el 3:1 que WCAG exige a los controles. Se usa
+  /// `neutral700`, de la misma rampa, que da 6.0:1.
+  static const Color radioInactive = neutral700;
+
   /// Fondos de los avatares de asistentes.
   ///
   /// Son los tonos más claros de las cuatro rampas cromáticas del Style Tile.

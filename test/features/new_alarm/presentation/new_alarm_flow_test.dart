@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:siempre_a_tiempo/core/domain/transport_mode.dart';
 import 'package:siempre_a_tiempo/core/router/app_router.dart';
 import 'package:siempre_a_tiempo/core/router/app_routes.dart';
 import 'package:siempre_a_tiempo/core/widgets/wizard_progress_bar.dart';
 import 'package:siempre_a_tiempo/features/new_alarm/presentation/new_alarm_flow.dart';
 import 'package:siempre_a_tiempo/shell/main_shell.dart';
 
+import '../../../helpers/new_alarm_steps.dart';
 import '../../../helpers/pump_app.dart';
 
 void main() {
@@ -85,30 +87,53 @@ void main() {
     );
   });
 
-  testWidgets('con los datos completos, Siguiente avisa que falta construirlo',
-      (tester) async {
+  testWidgets('con los datos completos, Siguiente avanza al paso 3', (tester) async {
     await pumpApp(tester, const NewAlarmFlow());
 
-    await tester.tap(find.text('Reunión'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Siguiente'));
-    await tester.pumpAndSettle();
+    await goToTransportStep(tester);
 
-    await tester.enterText(find.byType(TextField).first, 'Reunión con cliente');
-    await tester.enterText(find.byType(TextField).last, 'Avenida El Poblado #1-25');
-    await tester.pumpAndSettle();
+    expect(find.text('¿Cómo te vas a mover?'), findsOneWidget);
+    expect(
+      tester.widget<WizardProgressBar>(find.byType(WizardProgressBar)).currentStep,
+      2,
+    );
+    // Carro viene elegido, así que se puede avanzar sin tocar nada.
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNotNull,
+    );
+  });
 
-    // La fecha se fija directamente: el selector de Material ya está cubierto
-    // por las pruebas del paso 2.
-    final estado = tester.state<NewAlarmFlowState>(find.byType(NewAlarmFlow));
-    estado.viewModel.updateWhenAt(DateTime(2026, 8, 20, 15));
-    await tester.pumpAndSettle();
+  testWidgets('en el paso 3, Siguiente avisa que el paso 4 falta construirlo',
+      (tester) async {
+    await pumpApp(tester, const NewAlarmFlow());
+    await goToTransportStep(tester);
 
     await tester.tap(find.text('Siguiente'));
     await tester.pumpAndSettle();
 
     expect(find.text('Próximamente: este paso está en construcción.'), findsOneWidget);
+    expect(find.text('¿Cómo te vas a mover?'), findsOneWidget);
+  });
+
+  testWidgets('Atrás desde el paso 3 vuelve al 2 y conserva el medio elegido',
+      (tester) async {
+    await pumpApp(tester, const NewAlarmFlow());
+    await goToTransportStep(tester);
+
+    await tester.ensureVisible(find.text('Bicicleta'));
+    await tester.tap(find.text('Bicicleta'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Atrás'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Detalles de la reunión'), findsOneWidget);
+
+    await tester.tap(find.text('Siguiente'));
+    await tester.pumpAndSettle();
+
+    final vm = tester.state<NewAlarmFlowState>(find.byType(NewAlarmFlow)).viewModel;
+    expect(vm.draft.transportMode, TransportMode.bicycle);
   });
 
   testWidgets('recorrido desde Inicio: el retroceso del sistema va paso a paso',

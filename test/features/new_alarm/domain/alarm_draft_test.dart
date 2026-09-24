@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:siempre_a_tiempo/core/domain/transport_mode.dart';
 import 'package:siempre_a_tiempo/features/new_alarm/domain/alarm_draft.dart';
 import 'package:siempre_a_tiempo/features/new_alarm/domain/alarm_type.dart';
 
@@ -47,6 +48,28 @@ void main() {
       );
 
       expect(borrador.isDetailsStepValid, isFalse);
+    });
+  });
+
+  group('medio de transporte', () {
+    test('un borrador nuevo arranca en carro', () {
+      expect(const AlarmDraft().transportMode, TransportMode.car);
+    });
+
+    test('copyWith cambia el medio sin tocar los demás campos', () {
+      const original = AlarmDraft(type: AlarmType.meeting, title: 'Reunión con cliente');
+
+      final copia = original.copyWith(transportMode: TransportMode.bicycle);
+
+      expect(copia.transportMode, TransportMode.bicycle);
+      expect(copia.type, AlarmType.meeting);
+      expect(copia.title, 'Reunión con cliente');
+    });
+
+    test('copyWith sin medio conserva el elegido', () {
+      const original = AlarmDraft(transportMode: TransportMode.walking);
+
+      expect(original.copyWith(title: 'Otra').transportMode, TransportMode.walking);
     });
   });
 

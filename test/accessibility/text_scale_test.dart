@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:siempre_a_tiempo/features/new_alarm/presentation/new_alarm_flow.dart';
 import 'package:siempre_a_tiempo/shell/main_shell.dart';
 
+import '../helpers/new_alarm_steps.dart';
 import '../helpers/pump_app.dart';
 
 void main() {
@@ -37,11 +38,11 @@ void main() {
 
           expect(tester.takeException(), isNull);
 
-          await tester.tap(find.text('Reunión'));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Siguiente'));
-          await tester.pumpAndSettle();
+          // Recorre los pasos 2 y 3; cada transición vuelve a revisar
+          // desbordes en la pantalla que queda visible.
+          await goToTransportStep(tester);
 
+          expect(find.text('¿Cómo te vas a mover?'), findsOneWidget);
           expect(tester.takeException(), isNull);
         },
       );

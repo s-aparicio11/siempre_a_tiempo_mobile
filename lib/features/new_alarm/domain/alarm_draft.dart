@@ -1,3 +1,4 @@
+import '../../../core/domain/transport_mode.dart';
 import 'alarm_type.dart';
 import 'attendee.dart';
 
@@ -12,6 +13,7 @@ class AlarmDraft {
     this.whenAt,
     this.location = '',
     this.attendees = const <Attendee>[],
+    this.transportMode = TransportMode.car,
   });
 
   final AlarmType? type;
@@ -19,6 +21,10 @@ class AlarmDraft {
   final DateTime? whenAt;
   final String location;
   final List<Attendee> attendees;
+
+  /// Arranca en carro, el medio más común, así que el paso de transporte
+  /// nunca queda incompleto.
+  final TransportMode transportMode;
 
   bool get isTypeStepValid => type != null;
 
@@ -35,6 +41,7 @@ class AlarmDraft {
     DateTime? whenAt,
     String? location,
     List<Attendee>? attendees,
+    TransportMode? transportMode,
     bool clearWhenAt = false,
   }) {
     return AlarmDraft(
@@ -43,6 +50,7 @@ class AlarmDraft {
       whenAt: clearWhenAt ? null : (whenAt ?? this.whenAt),
       location: location ?? this.location,
       attendees: attendees ?? this.attendees,
+      transportMode: transportMode ?? this.transportMode,
     );
   }
 }

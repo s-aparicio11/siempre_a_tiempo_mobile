@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:siempre_a_tiempo/features/home/data/mock_alarm_repository.dart';
-import 'package:siempre_a_tiempo/features/home/domain/transport_mode.dart';
+import 'package:siempre_a_tiempo/core/domain/transport_mode.dart';
 
 void main() {
   test('devuelve las tres alarmas del diseño', () async {

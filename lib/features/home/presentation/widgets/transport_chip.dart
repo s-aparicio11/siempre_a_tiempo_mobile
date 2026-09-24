@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/domain/transport_mode.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../domain/transport_mode.dart';
+import '../../../../core/widgets/transport_mode_icon.dart';
 
 /// Indicador del medio de transporte de una alarma.
 class TransportChip extends StatelessWidget {
   const TransportChip({super.key, required this.mode});
 
   final TransportMode mode;
-
-  IconData get _icon => switch (mode) {
-        TransportMode.car => LucideIcons.car,
-        TransportMode.walking => LucideIcons.footprints,
-      };
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +26,7 @@ class TransportChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(_icon, size: 16, color: AppColors.textPrimary),
+          Icon(mode.icon, size: 16, color: AppColors.textPrimary),
           const SizedBox(width: AppSpacing.xs + 2),
           Text(
             mode.label,

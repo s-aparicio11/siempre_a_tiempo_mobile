@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:siempre_a_tiempo/features/home/domain/alarm.dart';
-import 'package:siempre_a_tiempo/features/home/domain/transport_mode.dart';
+import 'package:siempre_a_tiempo/core/domain/transport_mode.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarm_card.dart';
 
 import '../../../../helpers/pump_app.dart';

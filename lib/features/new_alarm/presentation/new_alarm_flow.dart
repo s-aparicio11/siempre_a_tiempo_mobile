@@ -7,6 +7,7 @@ import '../../../core/widgets/wizard_bottom_bar.dart';
 import '../../../core/widgets/wizard_progress_bar.dart';
 import 'new_alarm_view_model.dart';
 import 'steps/step_details_screen.dart';
+import 'steps/step_transport_screen.dart';
 import 'steps/step_type_screen.dart';
 
 /// Asistente de creación de alarmas.
@@ -106,6 +107,7 @@ class NewAlarmFlowState extends State<NewAlarmFlow> {
                       children: const <Widget>[
                         StepTypeScreen(),
                         StepDetailsScreen(),
+                        StepTransportScreen(),
                       ],
                     ),
                   ),

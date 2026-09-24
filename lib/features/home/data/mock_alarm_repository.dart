@@ -1,5 +1,5 @@
+import '../../../core/domain/transport_mode.dart';
 import '../domain/alarm.dart';
-import '../domain/transport_mode.dart';
 import 'alarm_repository.dart';
 
 /// Implementación en memoria con los datos del diseño aprobado.

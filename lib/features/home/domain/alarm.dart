@@ -1,4 +1,4 @@
-import 'transport_mode.dart';
+import '../../../core/domain/transport_mode.dart';
 
 /// Un compromiso del usuario con su hora de salida ya calculada.
 ///

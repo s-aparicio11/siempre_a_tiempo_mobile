@@ -54,11 +54,38 @@ void main() {
       expect(_contrast(AppColors.secondary, AppColors.surface),
           greaterThanOrEqualTo(4.5));
     });
+
+    test('etiqueta de una opción seleccionada', () {
+      expect(_contrast(AppColors.textPrimary, AppColors.selectedSurface),
+          greaterThanOrEqualTo(4.5));
+    });
+
+    test('descripción de una opción seleccionada', () {
+      expect(_contrast(AppColors.textSecondary, AppColors.selectedSurface),
+          greaterThanOrEqualTo(4.5));
+    });
   });
 
   group('texto grande: mínimo 3:1', () {
     test('hora de inicio en oliva sobre superficie', () {
       expect(_contrast(AppColors.accentTime, AppColors.surface),
+          greaterThanOrEqualTo(3.0));
+    });
+  });
+
+  group('íconos y controles: mínimo 3:1', () {
+    test('ícono de una opción sobre su recuadro', () {
+      expect(_contrast(AppColors.secondary, AppColors.iconBadge),
+          greaterThanOrEqualTo(3.0));
+    });
+
+    test('radio sin marcar sobre superficie', () {
+      expect(_contrast(AppColors.radioInactive, AppColors.surface),
+          greaterThanOrEqualTo(3.0));
+    });
+
+    test('radio marcado sobre una opción seleccionada', () {
+      expect(_contrast(AppColors.primary, AppColors.selectedSurface),
           greaterThanOrEqualTo(3.0));
     });
   });

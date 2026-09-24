@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/domain/transport_mode.dart';
 import '../domain/alarm_draft.dart';
 import '../domain/alarm_type.dart';
 import '../domain/attendee.dart';
@@ -12,8 +13,8 @@ class NewAlarmViewModel extends ChangeNotifier {
   /// Pasos que muestra el indicador de progreso del diseño.
   static const int totalSteps = 4;
 
-  /// Último paso construido. Los pasos 3 y 4 están fuera del alcance actual.
-  static const int lastImplementedStep = 1;
+  /// Último paso construido. El paso 4 está fuera del alcance actual.
+  static const int lastImplementedStep = 2;
 
   AlarmDraft _draft;
   AlarmDraft get draft => _draft;
@@ -26,6 +27,8 @@ class NewAlarmViewModel extends ChangeNotifier {
   bool get canAdvance => switch (_currentStep) {
         0 => _draft.isTypeStepValid,
         1 => _draft.isDetailsStepValid,
+        // El medio de transporte siempre tiene valor: arranca en carro.
+        2 => true,
         _ => false,
       };
 
@@ -46,6 +49,11 @@ class NewAlarmViewModel extends ChangeNotifier {
 
   void updateWhenAt(DateTime value) {
     _draft = _draft.copyWith(whenAt: value);
+    notifyListeners();
+  }
+
+  void selectTransportMode(TransportMode mode) {
+    _draft = _draft.copyWith(transportMode: mode);
     notifyListeners();
   }
 
