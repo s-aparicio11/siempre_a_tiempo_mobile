@@ -46,7 +46,9 @@ class PrimaryButton extends StatelessWidget {
             Icon(icon, size: 20),
             const SizedBox(width: AppSpacing.sm),
           ],
-          Text(label),
+          // Flexible deja que una etiqueta larga, como "Guardar alarma" con
+          // letra ampliada, pase a dos líneas en lugar de salirse del botón.
+          Flexible(child: Text(label, textAlign: TextAlign.center)),
         ],
       ),
     );

@@ -81,6 +81,16 @@ abstract final class AppColors {
   /// Texto sobre fondos de confirmación.
   static const Color onSuccessSurface = green900;
 
+  /// Fondo del ícono de éxito de la pantalla de confirmación.
+  static const Color successSurface = green100;
+
+  /// Fondo de la tarjeta que destaca la hora de salida.
+  ///
+  /// Sobre este fondo `accentTime` da 4.3:1: alcanza para la hora grande,
+  /// que es texto grande (3:1), pero no para la etiqueta pequeña que la
+  /// acompaña (4.5:1). Esa etiqueta va en `textSecondary`, que da 5.3:1.
+  static const Color highlightSurface = amber100;
+
   /// Error de validación en un campo.
   static const Color error = red700;
 

@@ -12,7 +12,7 @@ import 'package:siempre_a_tiempo/features/home/presentation/home_screen.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/home_view_model.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarm_card.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarms_empty_state.dart';
-import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarms_error_state.dart';
+import 'package:siempre_a_tiempo/core/widgets/retry_error_state.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarms_skeleton.dart';
 import 'package:siempre_a_tiempo/shell/main_shell.dart';
 
@@ -83,7 +83,7 @@ void main() {
     await _cargar(tester, vm);
     await _pumpHome(tester, vm);
 
-    expect(find.byType(AlarmsErrorState), findsOneWidget);
+    expect(find.byType(RetryErrorState), findsOneWidget);
 
     vm.repository = MockAlarmRepository(delay: Duration.zero);
     await tester.tap(find.text('Reintentar'));

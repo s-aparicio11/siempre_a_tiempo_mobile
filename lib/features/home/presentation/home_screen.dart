@@ -6,13 +6,13 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/retry_error_state.dart';
 import '../data/mock_alarm_repository.dart';
 import '../domain/alarm.dart';
 import 'home_state.dart';
 import 'home_view_model.dart';
 import 'widgets/alarm_card.dart';
 import 'widgets/alarms_empty_state.dart';
-import 'widgets/alarms_error_state.dart';
 import 'widgets/alarms_skeleton.dart';
 import 'widgets/greeting_header.dart';
 
@@ -111,7 +111,7 @@ class _HomeView extends StatelessWidget {
               HomeLoading() => const SliverToBoxAdapter(child: AlarmsSkeleton()),
               HomeEmpty() => const SliverToBoxAdapter(child: AlarmsEmptyState()),
               HomeError(:final String message) => SliverToBoxAdapter(
-                  child: AlarmsErrorState(message: message, onRetry: vm.load),
+                  child: RetryErrorState(message: message, onRetry: vm.load),
                 ),
               HomeLoaded(:final List<Alarm> alarms) => SliverList.separated(
                   itemCount: alarms.length,

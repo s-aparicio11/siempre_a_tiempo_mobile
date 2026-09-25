@@ -33,14 +33,18 @@ falsos en memoria.
 
 ### Alcance actual
 
-Tres pantallas, tomadas de los mockups aprobados:
+Seis pantallas, tomadas de los mockups aprobados:
 
 1. **Inicio (Home)** — saludo, resumen del día y lista de próximas alarmas.
 2. **Nueva alarma · Paso 1** — selección del tipo de alarma.
 3. **Nueva alarma · Paso 2** — detalles de la reunión.
+4. **Nueva alarma · Paso 3** — selección del medio de transporte.
+5. **Nueva alarma · Paso 4** — hora recomendada para salir y factores considerados.
+6. **Alarma creada** — confirmación; "Entendido" regresa a Inicio.
 
 Fuera de alcance (se resuelven con pantallas placeholder "Próximamente"):
-Mapa, Perfil, y los pasos 3 y 4 del asistente de creación.
+Mapa, Perfil y el detalle de cada factor del paso 4. La alarma creada no se persiste,
+así que no aparece en la lista de Inicio.
 
 ## Stack y arquitectura
 

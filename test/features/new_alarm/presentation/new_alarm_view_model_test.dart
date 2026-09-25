@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:siempre_a_tiempo/core/domain/transport_mode.dart';
+import 'package:siempre_a_tiempo/features/new_alarm/data/mock_departure_estimate_repository.dart';
 import 'package:siempre_a_tiempo/features/new_alarm/domain/alarm_type.dart';
+import 'package:siempre_a_tiempo/features/new_alarm/presentation/departure_state.dart';
 import 'package:siempre_a_tiempo/features/new_alarm/presentation/new_alarm_view_model.dart';
 
 void main() {
@@ -49,22 +51,48 @@ void main() {
     expect(vm.isFirstStep, isFalse);
   });
 
-  test('no avanza más allá del último paso implementado', () {
-    final vm = NewAlarmViewModel()
+  test('al entrar al paso 4 calcula la hora y solo entonces permite guardar',
+      () async {
+    final vm = NewAlarmViewModel(
+      departureRepository: MockDepartureEstimateRepository(delay: Duration.zero),
+    )
       ..selectType(AlarmType.meeting)
       ..next()
       ..updateTitle('Reunión con cliente')
       ..updateWhenAt(DateTime(2026, 8, 20, 15))
-      ..updateLocation('Avenida El Poblado #1-25');
+      ..updateLocation('Avenida El Poblado #1-25')
+      ..next();
+
+    expect(vm.currentStep, 2);
+    expect(vm.isLastStep, isFalse);
 
     expect(vm.next(), isTrue);
-    expect(vm.currentStep, 2);
+    expect(vm.currentStep, NewAlarmViewModel.departureStep);
+    expect(vm.isLastStep, isTrue);
+    expect(vm.departure, isA<DepartureLoading>());
+    expect(vm.canAdvance, isFalse);
 
-    // El paso de transporte siempre está completo, pero el paso 4 está
-    // fuera del alcance: next() informa que no pudo avanzar.
+    await pumpEventQueue();
+
+    expect(vm.departure, isA<DepartureReady>());
     expect(vm.canAdvance, isTrue);
+  });
+
+  test('en el último paso next() no avanza: la acción es guardar', () async {
+    final vm = NewAlarmViewModel(
+      departureRepository: MockDepartureEstimateRepository(delay: Duration.zero),
+    )
+      ..selectType(AlarmType.meeting)
+      ..next()
+      ..updateTitle('Reunión con cliente')
+      ..updateWhenAt(DateTime(2026, 8, 20, 15))
+      ..updateLocation('Avenida El Poblado #1-25')
+      ..next()
+      ..next();
+    await pumpEventQueue();
+
     expect(vm.next(), isFalse);
-    expect(vm.currentStep, 2);
+    expect(vm.currentStep, NewAlarmViewModel.departureStep);
   });
 
   test('volver desde el paso 3 conserva el medio elegido', () {

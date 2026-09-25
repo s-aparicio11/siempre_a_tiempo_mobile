@@ -64,11 +64,21 @@ void main() {
       expect(_contrast(AppColors.textSecondary, AppColors.selectedSurface),
           greaterThanOrEqualTo(4.5));
     });
+
+    test('etiqueta y detalle de la tarjeta de hora de salida', () {
+      expect(_contrast(AppColors.textSecondary, AppColors.highlightSurface),
+          greaterThanOrEqualTo(4.5));
+    });
   });
 
   group('texto grande: mínimo 3:1', () {
     test('hora de inicio en oliva sobre superficie', () {
       expect(_contrast(AppColors.accentTime, AppColors.surface),
+          greaterThanOrEqualTo(3.0));
+    });
+
+    test('hora de salida en oliva sobre la tarjeta destacada', () {
+      expect(_contrast(AppColors.accentTime, AppColors.highlightSurface),
           greaterThanOrEqualTo(3.0));
     });
   });
@@ -86,6 +96,11 @@ void main() {
 
     test('radio marcado sobre una opción seleccionada', () {
       expect(_contrast(AppColors.primary, AppColors.selectedSurface),
+          greaterThanOrEqualTo(3.0));
+    });
+
+    test('marca de éxito sobre su círculo', () {
+      expect(_contrast(AppColors.success, AppColors.successSurface),
           greaterThanOrEqualTo(3.0));
     });
   });

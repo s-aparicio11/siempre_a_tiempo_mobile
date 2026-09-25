@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/secondary_button.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import 'secondary_button.dart';
 
-class AlarmsErrorState extends StatelessWidget {
-  const AlarmsErrorState({
+/// Mensaje de error con la opción de reintentar.
+///
+/// Lo comparten Inicio y el paso de hora de salida del asistente.
+class RetryErrorState extends StatelessWidget {
+  const RetryErrorState({
     super.key,
     required this.message,
     required this.onRetry,

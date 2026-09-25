@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarms_empty_state.dart';
-import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarms_error_state.dart';
+import 'package:siempre_a_tiempo/core/widgets/retry_error_state.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/widgets/alarms_skeleton.dart';
 import 'package:siempre_a_tiempo/features/home/presentation/widgets/greeting_header.dart';
 
@@ -56,13 +56,13 @@ void main() {
     });
   });
 
-  group('AlarmsErrorState', () {
+  group('RetryErrorState', () {
     testWidgets('muestra el mensaje y reintenta al tocar el botón', (tester) async {
       var reintentos = 0;
       await pumpApp(
         tester,
         Scaffold(
-          body: AlarmsErrorState(
+          body: RetryErrorState(
             message: 'No pudimos cargar tus alarmas.',
             onRetry: () => reintentos++,
           ),

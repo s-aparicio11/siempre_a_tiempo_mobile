@@ -4,6 +4,7 @@ import 'package:siempre_a_tiempo/core/domain/transport_mode.dart';
 import 'package:siempre_a_tiempo/core/router/app_router.dart';
 import 'package:siempre_a_tiempo/core/router/app_routes.dart';
 import 'package:siempre_a_tiempo/core/widgets/wizard_progress_bar.dart';
+import 'package:siempre_a_tiempo/features/new_alarm/presentation/alarm_created_screen.dart';
 import 'package:siempre_a_tiempo/features/new_alarm/presentation/new_alarm_flow.dart';
 import 'package:siempre_a_tiempo/shell/main_shell.dart';
 
@@ -104,16 +105,87 @@ void main() {
     );
   });
 
-  testWidgets('en el paso 3, Siguiente avisa que el paso 4 falta construirlo',
+  testWidgets('del paso 3 avanza al 4, que calcula y luego muestra la hora',
       (tester) async {
     await pumpApp(tester, const NewAlarmFlow());
     await goToTransportStep(tester);
 
     await tester.tap(find.text('Siguiente'));
+    // Solo la transición de página: pumpAndSettle esperaría también al
+    // indicador de carga y el cálculo ya habría terminado. El primer pump
+    // arranca la animación y el segundo la lleva hasta el final.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Hora recomendada para salir'), findsOneWidget);
+    expect(find.text('Calculando tu hora de salida…'), findsOneWidget);
+    expect(
+      tester.widget<WizardProgressBar>(find.byType(WizardProgressBar)).currentStep,
+      3,
+    );
+
+    // El mock tarda 800 ms en responder.
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
-    expect(find.text('Próximamente: este paso está en construcción.'), findsOneWidget);
-    expect(find.text('¿Cómo te vas a mover?'), findsOneWidget);
+    expect(find.text('2:20 PM'), findsOneWidget);
+    expect(find.text('Tráfico actual'), findsOneWidget);
+  });
+
+  testWidgets('Guardar alarma solo se habilita con la hora calculada',
+      (tester) async {
+    await pumpApp(tester, const NewAlarmFlow());
+    await goToTransportStep(tester);
+    await tester.tap(find.text('Siguiente'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Calculando tu hora de salida…'), findsOneWidget);
+    expect(find.text('Guardar alarma'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('recorrido completo: Inicio, asistente, confirmación y de vuelta a Inicio',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        initialRoute: AppRoutes.home,
+        onGenerateRoute: AppRouter.onGenerateRoute,
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Nueva alarma'));
+    await tester.pumpAndSettle();
+    await goToTransportStep(tester);
+    await tester.tap(find.text('Siguiente'));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Guardar alarma'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewAlarmFlow), findsNothing);
+    expect(find.text('¡Listo! Tu alarma ha sido creada'), findsOneWidget);
+    expect(find.text('Reunión con cliente'), findsOneWidget);
+    expect(find.text('Debes salir a las 2:20 PM'), findsOneWidget);
+
+    await tester.tap(find.text('Entendido'));
+    await tester.pumpAndSettle();
+
+    // El asistente fue reemplazado: debajo de la confirmación estaba Inicio.
+    expect(find.byType(AlarmCreatedScreen), findsNothing);
+    expect(find.byType(NewAlarmFlow), findsNothing);
+    expect(find.byType(MainShell), findsOneWidget);
   });
 
   testWidgets('Atrás desde el paso 3 vuelve al 2 y conserva el medio elegido',

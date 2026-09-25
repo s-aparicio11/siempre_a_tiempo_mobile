@@ -1,7 +1,7 @@
 # Diseño técnico y plan de trabajo — Siempre a Tiempo (front-end móvil)
 
 - **Fecha:** 2026-09-22
-- **Alcance:** tres pantallas, front-end Flutter para celular, datos simulados
+- **Alcance:** seis pantallas, front-end Flutter para celular, datos simulados
 - **Estado:** aprobado para planificación
 
 ---
@@ -26,6 +26,9 @@ pantallas deben verse y comportarse como el producto final.
 | P1 | Inicio | Saludo personalizado, resumen del día y lista de próximas alarmas |
 | P2 | Nueva alarma · Paso 1 | Selección del tipo de alarma |
 | P3 | Nueva alarma · Paso 2 | Captura de los detalles de la reunión |
+| P4 | Nueva alarma · Paso 3 | Selección del medio de transporte |
+| P5 | Nueva alarma · Paso 4 | Hora recomendada para salir y factores considerados |
+| P6 | Alarma creada | Confirmación con el resumen de la alarma |
 
 Transversales: sistema de diseño (tema, tipografía, color, espaciado), shell de navegación
 inferior y asistente de creación con indicador de progreso.
@@ -33,7 +36,7 @@ inferior y asistente de creación con indicador de progreso.
 **Fuera del alcance** — se resuelven con una pantalla placeholder "Próximamente":
 
 - Pestañas Mapa y Perfil.
-- Pasos 3 y 4 del asistente de creación.
+- Detalle de cada factor del paso 4 (tráfico, clima, ruta).
 - Menú lateral (el ícono de hamburguesa no abre nada por ahora).
 - Cualquier integración real: tráfico, clima, mapas, calendario, contactos, autenticación,
   notificaciones y persistencia.
@@ -59,6 +62,8 @@ lib/
 ├── main.dart                          # runApp
 ├── app.dart                           # MaterialApp, tema y rutas
 ├── core/
+│   ├── domain/
+│   │   └── transport_mode.dart        # compartido por Inicio y el asistente
 │   ├── theme/
 │   │   ├── app_colors.dart            # tokens de color
 │   │   ├── app_typography.dart        # escala tipográfica
@@ -72,14 +77,15 @@ lib/
 │       ├── secondary_button.dart      # botón con borde (azul)
 │       ├── wizard_progress_bar.dart   # indicador de 4 segmentos
 │       ├── wizard_bottom_bar.dart     # barra fija de dos acciones
+│       ├── transport_mode_icon.dart   # ícono único de cada medio
+│       ├── retry_error_state.dart     # error con "Reintentar" (Inicio y paso 4)
 │       └── coming_soon_screen.dart    # placeholder reutilizable
 ├── shell/
 │   └── main_shell.dart                # Scaffold + BottomNavigationBar
 └── features/
     ├── home/
     │   ├── domain/
-    │   │   ├── alarm.dart
-    │   │   └── transport_mode.dart
+    │   │   └── alarm.dart
     │   ├── data/
     │   │   ├── alarm_repository.dart
     │   │   └── mock_alarm_repository.dart
@@ -91,23 +97,37 @@ lib/
     │           ├── alarm_card.dart
     │           ├── transport_chip.dart
     │           ├── alarms_skeleton.dart
-    │           ├── alarms_empty_state.dart
-    │           └── alarms_error_state.dart
+    │           └── alarms_empty_state.dart
     └── new_alarm/
         ├── domain/
         │   ├── alarm_type.dart
         │   ├── alarm_draft.dart
-        │   └── attendee.dart
+        │   ├── attendee.dart
+        │   ├── travel_factor.dart
+        │   ├── departure_estimate.dart
+        │   └── created_alarm_summary.dart
+        ├── data/
+        │   ├── departure_estimate_repository.dart
+        │   └── mock_departure_estimate_repository.dart
         └── presentation/
             ├── new_alarm_flow.dart
             ├── new_alarm_view_model.dart
+            ├── departure_state.dart
+            ├── alarm_created_screen.dart
             ├── steps/
             │   ├── step_type_screen.dart
-            │   └── step_details_screen.dart
+            │   ├── step_details_screen.dart
+            │   ├── step_transport_screen.dart
+            │   └── step_departure_screen.dart
             └── widgets/
                 ├── alarm_type_card.dart
                 ├── labeled_field.dart
-                └── attendee_avatars.dart
+                ├── attendee_avatars.dart
+                ├── option_icon_badge.dart
+                ├── transport_mode_card.dart
+                ├── departure_time_card.dart
+                ├── travel_factor_tile.dart
+                └── alarm_summary_card.dart
 ```
 
 Regla de ubicación: un widget vive dentro de su feature hasta que lo consuman dos o más
@@ -135,6 +155,7 @@ class AlarmDraft {
   final DateTime? whenAt;
   final String location;
   final List<Attendee> attendees;
+  final TransportMode transportMode;   // arranca en carro
 
   bool get isTypeStepValid    => type != null;
   bool get isDetailsStepValid => title.isNotEmpty && whenAt != null && location.isNotEmpty;
@@ -145,6 +166,7 @@ class AlarmDraft {
     DateTime? whenAt,
     String? location,
     List<Attendee>? attendees,
+    TransportMode? transportMode,
   });
 }
 
@@ -152,6 +174,20 @@ class Attendee {
   final String id;
   final String initials;
   final int avatarColorIndex;   // índice, no Color: domain/ no importa Flutter
+}
+
+enum TravelFactorKind { traffic, weather, route }
+
+class TravelFactor {
+  final TravelFactorKind kind;
+  final String value;           // "Moderado", "Lluvia ligera", "Av. El Poblado"
+}
+
+class DepartureEstimate {
+  final DateTime leaveAt;
+  final DateTime arriveAt;
+  final List<TravelFactor> factors;
+  Duration get margin;          // derivado: arriveAt - leaveAt
 }
 ```
 
@@ -168,8 +204,9 @@ lógica pertenece al backend. Hoy el mock la entrega como un valor fijo.
 MockAlarmRepository ──> HomeViewModel ──(notifyListeners)──> HomeScreen
                         (loading/loaded/empty/error)
 
-Interacción usuario ──> NewAlarmViewModel ──> StepTypeScreen / StepDetailsScreen
-                        (AlarmDraft + currentStep)
+Interacción usuario ──> NewAlarmViewModel ──> StepTypeScreen / StepDetailsScreen /
+                        (AlarmDraft + currentStep   StepTransportScreen / StepDepartureScreen
+                         + DepartureState)
 ```
 
 - **`HomeViewModel`** llama a `AlarmRepository.getTodayAlarms()` y expone un estado
@@ -177,7 +214,8 @@ Interacción usuario ──> NewAlarmViewModel ──> StepTypeScreen / StepDeta
   widget dedicado.
 - **`NewAlarmViewModel`** mantiene el `AlarmDraft` y el `currentStep` (0..3). Expone
   `canAdvance`, `next()`, `back()` y `cancel()`. No persiste nada: al intentar avanzar
-  desde el paso 2 muestra un `SnackBar` "Próximamente".
+  al paso 4 pide la estimación a `DepartureEstimateRepository`; al guardar, abre la
+  confirmación.
 
 Cada ViewModel se provee con un `ChangeNotifierProvider` en la raíz de su feature, no en
 la raíz de la app. No hay estado global.
@@ -188,6 +226,7 @@ la raíz de la app. No hay estado global.
 |------|----------|
 | `/` | `MainShell` (tabs Inicio, Mapa, Perfil) |
 | `/nueva-alarma` | `NewAlarmFlow`, ruta a pantalla completa sobre el shell |
+| `/nueva-alarma/lista` | `AlarmCreatedScreen`; reemplaza al asistente, así que cerrarla regresa a Inicio |
 
 `MainShell` usa `IndexedStack` para que cada tab conserve su estado al cambiar. Mapa y
 Perfil renderizan `ComingSoonScreen`.
@@ -248,12 +287,26 @@ Las pantallas consumen estos alias, nunca las rampas directamente.
 | `surfaceMuted` | `#F2F5FA` | Relleno de campos y chips neutros |
 | `border` | `#D5DCE6` | Bordes y divisores |
 | `progressInactive` | `#D5DCE6` | Segmentos pendientes del indicador |
+| `selectedSurface` | `#FCE9E4` | Fondo de una opción seleccionada |
+| `iconBadge` | `#E8F0FE` | Recuadro del ícono de una opción |
+| `radioInactive` | `#5A6472` | Borde de un radio sin marcar |
+| `successSurface` | `#E9F7EF` | Círculo del ícono de éxito |
+| `highlightSurface` | `#FCEFD0` | Tarjeta que destaca la hora de salida |
 
 **Decisión sobre el ámbar.** El Style Tile usa el ámbar brillante (`#F0A81E`) en el Display
 de 48 pt. Sobre blanco ese tono da 2.03:1 de contraste y `#C79417` da 2.74:1: ninguno
 alcanza el mínimo de 3:1 que WCAG exige incluso para texto grande. Para **texto** se usa
 `#8A6D1A` (4.90:1), que pertenece a la misma rampa del Style Tile. Los ámbares claros
 quedan para rellenos, chips y decoración, donde el requisito de contraste no aplica.
+
+**Decisión sobre el radio sin marcar.** El mockup del paso 3 dibuja su borde en `#B0B8C4`,
+que sobre blanco da 2.00:1 y no alcanza el 3:1 que WCAG exige a los controles. Se usa
+`#5A6472` (6.00:1), de la misma rampa de neutros.
+
+**Decisión sobre la tarjeta de hora de salida.** El mockup del paso 4 pone la etiqueta
+"Debes salir a las" en ámbar sobre `highlightSurface`: da 4.30:1, suficiente para la hora
+grande (texto grande, 3:1) pero no para la etiqueta de 13–15 pt (4.5:1). La hora conserva
+`accentTime` y la etiqueta usa `textSecondary` (5.26:1).
 
 Verificación de los demás pares, calculada sobre los valores reales:
 
@@ -268,6 +321,14 @@ Verificación de los demás pares, calculada sobre los valores reales:
 | `secondary` sobre `surface` | 7.21:1 | 4.5 |
 | `accentTime` sobre `surface` | 4.90:1 | 3.0 |
 | `onSuccessSurface` sobre verde claro | 5.87:1 | 4.5 |
+| `textPrimary` sobre `selectedSurface` | 12.13:1 | 4.5 |
+| `textSecondary` sobre `selectedSurface` | 5.12:1 | 4.5 |
+| `secondary` sobre `iconBadge` | 6.29:1 | 3.0 |
+| `radioInactive` sobre `surface` | 6.00:1 | 3.0 |
+| `primary` sobre `selectedSurface` | 4.64:1 | 3.0 |
+| `textSecondary` sobre `highlightSurface` | 5.26:1 | 4.5 |
+| `accentTime` sobre `highlightSurface` | 4.30:1 | 3.0 |
+| `success` sobre `successSurface` | 3.84:1 | 3.0 |
 
 ### 3.4 Tipografía
 
@@ -319,7 +380,7 @@ presionado; campo de texto **enfocado** y **con error**; ítem de lista **selecc
 
 De estos, el alcance actual usa: botón deshabilitado (HU-05, HU-06), campo enfocado
 (HU-06) y tarjeta de tipo seleccionada (HU-05). Los demás quedan disponibles en el tema
-para cuando se construyan los pasos 3 y 4.
+para pantallas futuras.
 
 ---
 
@@ -358,6 +419,37 @@ para cuando se construyan los pasos 3 y 4.
 | Campos | "Título de la reunión", "¿Cuándo es?", "¿Dónde es?" |
 | `AttendeeAvatars` | Fila de avatares de color + contador "+n" |
 | `WizardBottomBar` | "Atrás" (borde) + "Siguiente" (relleno) |
+
+### P4 · Nueva alarma · Paso 3
+
+| Componente | Descripción |
+|------------|-------------|
+| `WizardProgressBar` | 4 segmentos, 3 activos |
+| `headlineQuestion` | "¿Cómo te vas a mover?" |
+| `TransportModeCard` ×5 | Ícono en recuadro azul, etiqueta, descripción si está seleccionada, radio; estado seleccionado con fondo `red100` y borde primario |
+| `WizardBottomBar` | "Atrás" (borde) + "Siguiente" (relleno) |
+
+### P5 · Nueva alarma · Paso 4
+
+| Componente | Descripción |
+|------------|-------------|
+| `WizardProgressBar` | 4 segmentos, 4 activos |
+| `headlineQuestion` | "Hora recomendada para salir" |
+| `DepartureTimeCard` | Fondo ámbar claro: "Debes salir a las", hora en `display`, hora de llegada y margen |
+| `labelSection` | "FACTORES QUE SE TUVIERON EN CUENTA" |
+| `TravelFactorTile` ×3 | Ícono en recuadro azul, nombre, valor y chevron: Tráfico, Clima, Ruta |
+| Estados | Calculando, listo y error con "Reintentar" |
+| `WizardBottomBar` | "Atrás" (borde) + "Guardar alarma" (relleno) |
+
+### P6 · Alarma creada
+
+| Componente | Descripción |
+|------------|-------------|
+| Ícono de éxito | Círculo verde claro con marca de verificación |
+| Título | "¡Listo! Tu alarma ha sido creada", centrado |
+| Subtítulo | "Te avisaremos cuando sea momento de salir." |
+| `AlarmSummaryCard` | Título, fecha y hora del compromiso, "Debes salir a las {hora}" en rojo |
+| `PrimaryButton` | "Entendido", ancho completo; regresa a Inicio |
 
 ---
 
@@ -596,7 +688,7 @@ pruebas pasan.
 - **Dado** que algún campo obligatorio está vacío, **cuando** miro la barra inferior,
   **entonces** "Siguiente" está deshabilitado.
 - **Dado** que todos los campos están completos, **cuando** toco "Siguiente", **entonces**
-  aparece un mensaje "Próximamente" y permanezco en el paso 2.
+  avanzo al paso 3.
 - **Dado** que toco "Atrás", **cuando** regreso al paso 1, **entonces** el tipo que había
   elegido sigue seleccionado y los datos ya escritos se conservan al volver a avanzar.
 - **Dado** que abro el teclado, **cuando** escribo en un campo, **entonces** el contenido se
@@ -614,7 +706,7 @@ pruebas pasan.
 7. Construir `AttendeeAvatars`: resuelve el índice de color de cada `Attendee` contra esa
    paleta y dibuja la fila con el contador de excedentes.
 8. Manejar el teclado con `SingleChildScrollView` y `resizeToAvoidBottomInset`.
-9. Mostrar el `SnackBar` "Próximamente" al intentar avanzar.
+9. Avanzar al paso 3 al tocar "Siguiente" con los datos completos.
 10. Conservar el borrador al navegar entre pasos.
 11. Unit tests de validación del borrador.
 12. Widget tests: limpiar un campo, seleccionar fecha, habilitar "Siguiente".
@@ -696,6 +788,110 @@ escalado de texto y semántica.
 
 ---
 
+### HU-09 · Elegir cómo me voy a mover — 3 puntos
+
+> **Como** usuario creando una alarma,
+> **quiero** indicar en qué medio de transporte voy a ir,
+> **para** que la hora de salida considere el tiempo real de ese desplazamiento.
+
+**Criterios de aceptación**
+
+- **Dado** que llego al paso 3, **cuando** carga la pantalla, **entonces** veo el título
+  "¿Cómo te vas a mover?" y las opciones Carro, Transporte público, Moto, Bicicleta y
+  Caminando.
+- **Dado** que entro al paso 3 por primera vez, **cuando** observo las opciones,
+  **entonces** Carro está seleccionado por defecto y "Siguiente" está habilitado.
+- **Dado** una opción seleccionada, **cuando** la observo, **entonces** tiene fondo y borde
+  del color primario, su radio marcado y su descripción visible.
+- **Dado** que toco otra opción, **cuando** se ejecuta la acción, **entonces** queda
+  seleccionada y la anterior deja de estarlo.
+- **Dado** que toco "Atrás" y vuelvo a avanzar, **cuando** regreso al paso 3, **entonces**
+  el medio que había elegido sigue seleccionado.
+- **Dado** que toco "Siguiente", **cuando** se ejecuta la acción, **entonces** avanzo al
+  paso 4.
+
+**Actividades**
+
+1. Mover `TransportMode` a `core/domain/`, porque lo consumen Inicio y el asistente, y
+   ampliarlo a los cinco medios con su descripción.
+2. Cubrir los medios nuevos en `TransportChip`.
+3. Agregar los alias de color de la tarjeta de transporte y verificar su contraste.
+4. Extender `AlarmDraft` y el ViewModel con el medio elegido. Arranca en Carro, así que
+   el paso nunca queda incompleto y no necesita validación.
+5. Construir `TransportModeCard` con sus estados y semántica de opción seleccionable.
+6. Maquetar `StepTransportScreen` y conectarla al `PageView` del asistente.
+7. Unit tests del borrador y del ViewModel.
+8. Widget tests de la pantalla y del flujo; golden de la tarjeta.
+
+**Terminado cuando:** la selección es excluyente, el medio sobrevive a la navegación entre
+pasos y las pruebas pasan.
+
+---
+
+### HU-10 · Saber a qué hora debo salir antes de guardar — 5 puntos
+
+> **Como** usuario creando una alarma,
+> **quiero** ver la hora recomendada de salida y qué factores se consideraron,
+> **para** confiar en la alarma antes de guardarla.
+
+**Criterios de aceptación**
+
+- **Dado** que avanzo desde el paso 3, **cuando** carga el paso 4, **entonces** veo
+  "Hora recomendada para salir" y, mientras se calcula, un indicador de carga.
+- **Dado** que el cálculo termina, **cuando** observo la tarjeta, **entonces** veo
+  "Debes salir a las", la hora de salida, la hora de llegada y el margen en minutos.
+- **Dado** el cálculo terminado, **cuando** miro la sección "Factores que se tuvieron en
+  cuenta", **entonces** veo Tráfico actual, Clima y Ruta sugerida con su valor.
+- **Dado** que toco un factor, **cuando** se ejecuta la acción, **entonces** aparece un
+  mensaje "Próximamente".
+- **Dado** que el cálculo falla, **cuando** observo la pantalla, **entonces** veo un mensaje
+  de error y un botón "Reintentar".
+- **Dado** que el cálculo no ha terminado o falló, **cuando** miro la barra inferior,
+  **entonces** "Guardar alarma" está deshabilitado.
+- **Dado** que vuelvo al paso 3 y cambio el medio, **cuando** regreso al paso 4,
+  **entonces** la hora se recalcula con el medio nuevo.
+
+**Actividades**
+
+1. Definir `DepartureEstimate` y `TravelFactor` en `new_alarm/domain/`.
+2. Crear `DepartureEstimateRepository` y su implementación mock con demora simulada.
+3. Agregar el alias de fondo ámbar y verificar su contraste.
+4. Extender el ViewModel con el estado de la estimación y la acción de guardar.
+5. Extraer `OptionIconBadge` y construir `DepartureTimeCard` y `TravelFactorTile`.
+6. Maquetar `StepDepartureScreen` con sus tres estados y conectarla al asistente.
+7. Unit tests del repositorio y del ViewModel; widget tests y goldens.
+
+**Terminado cuando:** la hora se muestra con sus factores, los estados de carga y error
+funcionan y "Guardar alarma" solo se habilita con una estimación lista.
+
+---
+
+### HU-11 · Confirmar que mi alarma quedó creada — 2 puntos
+
+> **Como** usuario que acaba de guardar una alarma,
+> **quiero** una confirmación con el resumen,
+> **para** saber que quedó bien y a qué hora debo salir.
+
+**Criterios de aceptación**
+
+- **Dado** que toco "Guardar alarma", **cuando** se guarda, **entonces** el asistente se
+  reemplaza por la pantalla "¡Listo! Tu alarma ha sido creada".
+- **Dado** la confirmación, **cuando** la observo, **entonces** veo el título de la alarma,
+  su fecha y hora, y "Debes salir a las {hora}".
+- **Dado** que toco "Entendido" o uso el retroceso del sistema, **cuando** se ejecuta la
+  acción, **entonces** regreso a Inicio, no al asistente.
+
+**Actividades**
+
+1. Agregar la ruta `/nueva-alarma/lista` con el resumen como argumento.
+2. Construir `AlarmSummaryCard` y `AlarmCreatedScreen`.
+3. Widget tests de la pantalla y del recorrido completo hasta Inicio; golden de la tarjeta.
+
+**Terminado cuando:** el recorrido Inicio → asistente → confirmación → Inicio funciona y
+las pruebas pasan.
+
+---
+
 ## 6. Plan de trabajo por fases
 
 | Fase | Contenido | Puntos | Entregable verificable |
@@ -706,7 +902,10 @@ escalado de texto y semántica.
 | 4 | HU-07, HU-05 | 5 | Asistente con indicador de progreso y paso 1 funcional |
 | 5 | HU-06 | 5 | Paso 2 con captura y validación de datos |
 | 6 | HU-08 | 3 | Revisión de accesibilidad y consistencia sobre las tres pantallas |
-| | **Total** | **29** | |
+| 7 | HU-09 | 3 | Paso 3 con selección del medio de transporte |
+| 8 | HU-10 | 5 | Paso 4 con la hora recomendada y sus estados |
+| 9 | HU-11 | 2 | Confirmación de la alarma creada y regreso a Inicio |
+| | **Total** | **39** | |
 
 El orden pone primero el andamiaje (tema y navegación) para que las pantallas se construyan
 sobre una base estable, y deja la accesibilidad como una revisión transversal al final,
@@ -723,7 +922,8 @@ cuando ya existe todo lo que hay que auditar.
 | `google_fonts` descarga Inter en tiempo de ejecución | Arranque sin red roto y *golden tests* con otra tipografía | Empaquetar los cuatro `.ttf` en `google_fonts/` y desactivar la descarga en pruebas |
 | Los nombres de `lucide_icons` pueden variar entre versiones | Un icono no compila | Si un nombre no resuelve, buscarlo en el listado del paquete; no sustituir por Material sin anotarlo |
 | El ámbar del Style Tile no cumple contraste sobre blanco | Texto ilegible para baja visión | Resuelto: `accentTime` usa `amber900` de la misma rampa. La prueba de contraste lo protege |
-| Los pasos 3 y 4 del asistente no tienen diseño | El flujo queda incompleto | Aceptado: fuera de alcance, se resuelve con "Próximamente" |
+| La estimación de salida no existe todavía | La hora del paso 4 es simulada | Aceptado: `MockDepartureEstimateRepository` resta un tiempo fijo por medio de transporte; el backend la sustituirá |
+| La alarma creada no se persiste | No aparece en la lista de Inicio tras guardarla | Aceptado: la persistencia está fuera de alcance |
 | El cálculo de la hora de salida no existe | La app no demuestra la propuesta de valor real | Aceptado: `leaveAt` llega precalculado en el mock, tal como llegará del backend |
 | El selector de asistentes no tiene diseño de edición | El bloque es solo de lectura | Aceptado: se muestran los avatares sin permitir agregar ni quitar |
 

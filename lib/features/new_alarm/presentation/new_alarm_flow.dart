@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/wizard_bottom_bar.dart';
 import '../../../core/widgets/wizard_progress_bar.dart';
+import '../domain/created_alarm_summary.dart';
 import 'new_alarm_view_model.dart';
+import 'steps/step_departure_screen.dart';
 import 'steps/step_details_screen.dart';
 import 'steps/step_transport_screen.dart';
 import 'steps/step_type_screen.dart';
@@ -49,14 +52,27 @@ class NewAlarmFlowState extends State<NewAlarmFlow> {
     Navigator.of(context).pop();
   }
 
-  /// Acción derecha: avanza o avisa que el siguiente paso no existe todavía.
+  /// Acción derecha: avanza o, en el último paso, guarda.
   void _onTrailing() {
-    if (viewModel.next()) {
-      _goToCurrentStep();
+    if (viewModel.isLastStep) {
+      _save();
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Próximamente: este paso está en construcción.')),
+    if (viewModel.next()) {
+      _goToCurrentStep();
+    }
+  }
+
+  /// Reemplaza el asistente por la confirmación: así, al cerrarla, el
+  /// usuario vuelve a Inicio y no a un asistente ya terminado.
+  void _save() {
+    final CreatedAlarmSummary? summary = viewModel.save();
+    if (summary == null) {
+      return;
+    }
+    Navigator.of(context).pushReplacementNamed(
+      AppRoutes.alarmCreated,
+      arguments: summary,
     );
   }
 
@@ -108,6 +124,7 @@ class NewAlarmFlowState extends State<NewAlarmFlow> {
                         StepTypeScreen(),
                         StepDetailsScreen(),
                         StepTransportScreen(),
+                        StepDepartureScreen(),
                       ],
                     ),
                   ),
@@ -116,7 +133,7 @@ class NewAlarmFlowState extends State<NewAlarmFlow> {
               bottomNavigationBar: WizardBottomBar(
                 leadingLabel: vm.isFirstStep ? 'Cancelar' : 'Atrás',
                 onLeading: _onLeading,
-                trailingLabel: 'Siguiente',
+                trailingLabel: vm.isLastStep ? 'Guardar alarma' : 'Siguiente',
                 onTrailing: vm.canAdvance ? _onTrailing : null,
               ),
             ),

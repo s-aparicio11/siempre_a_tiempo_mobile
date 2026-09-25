@@ -47,6 +47,29 @@ void main() {
       expect(tester.getSize(find.byType(FilledButton)).height,
           greaterThanOrEqualTo(48.0));
     });
+
+    testWidgets('una etiqueta larga con letra ampliada no se sale del botón',
+        (tester) async {
+      await pumpApp(
+        tester,
+        const Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 150,
+              child: PrimaryButton(
+                label: 'Guardar alarma',
+                onPressed: _noop,
+                expanded: true,
+              ),
+            ),
+          ),
+        ),
+        textScale: 1.5,
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Guardar alarma'), findsOneWidget);
+    });
   });
 
   group('SecondaryButton', () {
@@ -68,3 +91,5 @@ void main() {
     });
   });
 }
+
+void _noop() {}

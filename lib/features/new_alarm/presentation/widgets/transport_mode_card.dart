@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/transport_mode_icon.dart';
+import 'option_icon_badge.dart';
 
 /// Opción seleccionable del paso de transporte del asistente.
 ///
@@ -47,7 +48,7 @@ class TransportModeCard extends StatelessWidget {
               ),
               child: Row(
                 children: <Widget>[
-                  _IconBadge(mode: mode, selected: selected),
+                  OptionIconBadge(icon: mode.icon, highlighted: selected),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
@@ -68,34 +69,6 @@ class TransportModeCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Recuadro vertical con el ícono del medio.
-///
-/// En la opción seleccionada pasa a blanco, porque el azul claro se perdería
-/// contra el fondo rosado de la tarjeta.
-class _IconBadge extends StatelessWidget {
-  const _IconBadge({required this.mode, required this.selected});
-
-  final TransportMode mode;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 44,
-      decoration: BoxDecoration(
-        color: selected ? AppColors.surface : AppColors.iconBadge,
-        borderRadius: BorderRadius.circular(AppRadius.chip),
-      ),
-      child: Icon(
-        mode.icon,
-        size: 20,
-        color: selected ? AppColors.primary : AppColors.secondary,
       ),
     );
   }
